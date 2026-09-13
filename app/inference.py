@@ -40,13 +40,13 @@ class GPTInference:
         )
 
         # Build model before loading weights
-        dummy_input = tf.ones((1, MAX_SEQ_LEN), dtype=tf.int32)
+        dummy_input = tf.ones((1, 1), dtype=tf.int32)
         self.model(dummy_input)
 
         # Load trained weights
         self.model.load_weights(MODEL_WEIGHTS_PATH)
 
-        print("✅ Model loaded successfully.")
+        print(" Model loaded successfully.")
 
     def generate_text(
         self,
