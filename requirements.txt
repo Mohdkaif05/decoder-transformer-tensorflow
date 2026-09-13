@@ -1,5 +1,8 @@
 tensorflow==2.20.0
-datasets==4.8.5
-os
-pickle
 numpy==2.2.6
+sentencepiece
+fastapi
+uvicorn[standard]
+pydantic
+streamlit
+requests

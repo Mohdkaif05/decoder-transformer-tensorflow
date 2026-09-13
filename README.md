@@ -1,28 +1,37 @@
 # MiniGPT — GPT Style Transformer Built From Scratch Using TensorFlow
 
-##  Overview
+## Overview
 
 MiniGPT is a custom decoder-only Transformer (GPT-style language model) implemented completely from scratch using TensorFlow.
 
 The project focuses on understanding and implementing the internal mechanics of modern Large Language Models.
 
 This implementation includes:
+
 - Multi-Head Self Attention
 - Positional Encoding
 - Decoder Blocks
 - Autoregressive Text Generation
 - Custom Training Pipeline
 - SentencePiece Tokenization
+- Top-k Sampling
+- Temperature Sampling
+- FastAPI Inference API
+- Streamlit Frontend
+- Real-time Token-by-Token Story Generation
 
 The model was trained on a TinyStories-style dataset to generate short coherent stories.
-Dataset link: https://huggingface.co/datasets/roneneldan/TinyStories
+
+Dataset:
+
+https://huggingface.co/datasets/roneneldan/TinyStories
 
 ---
 
-#  Features
+# Features
 
 - GPT-style Decoder-Only Transformer
-- Built completely from scratch using TensorFlow, NumPy
+- Built completely from scratch using TensorFlow and NumPy
 - Custom Multi-Head Attention implementation
 - Positional Encoding
 - Masking
@@ -30,9 +39,14 @@ Dataset link: https://huggingface.co/datasets/roneneldan/TinyStories
 - Mixed Precision Training (FP16)
 - Top-k Sampling
 - Temperature Sampling
+- FastAPI Backend
+- Streamlit Frontend
+- Token-by-Token Streaming Generation
+- Epoch 6 selected as the final deployment checkpoint
+
 ---
 
-#  Model Architecture
+# Model Architecture
 
 | Parameter | Value |
 |---|---|
@@ -48,7 +62,7 @@ Dataset link: https://huggingface.co/datasets/roneneldan/TinyStories
 
 ---
 
-#  Components Implemented
+# Components Implemented
 
 ## Transformer Components
 
@@ -63,7 +77,7 @@ Dataset link: https://huggingface.co/datasets/roneneldan/TinyStories
 
 ---
 
-# ⚙️ Training Details
+# Training Details
 
 | Configuration | Value |
 |---|---|
@@ -77,10 +91,26 @@ Dataset link: https://huggingface.co/datasets/roneneldan/TinyStories
 
 ---
 
-# 📂 Project Structure
+# Project Structure
 
 ```text
 minigpt/
+│
+├── backend/
+│   ├── app.py
+│   └── requirements.txt
+│
+├── frontend/
+│   ├── streamlit_app.py
+│   └── requirements.txt
+│
+├── models/
+│   ├── config.json
+│   └── gpt_epoch_6.weights.h5
+│
+├── tokenizer/
+│   ├── tok.model
+│   └── tok.vocab
 │
 ├── data/
 │   ├── raw_dataset/
@@ -94,31 +124,20 @@ minigpt/
 │       ├── x_50k.pkl
 │       └── y_50k.pkl
 │
-├── tokenizer/
-│   ├── tok.model
-│   └── tok.vocab
-│
-├── saved_model/
-│   ├── config.json
-│   ├── gpt_epoch_1_2_3_4.weights.h5
-│   ├── gpt_epoch_5.weights.h5
-│   ├── gpt_epoch_6.weights.h5
-│   └── gpt_epoch_7.weights.h5
-│
 ├── notebooks/
 │   ├── data_preprocessing.ipynb
 │   └── training.ipynb
 │
-├── requirements.txt
 ├── README.md
 └── .gitignore
 ```
 
 ---
 
-# 📊 Model Evaluation
+# Model Evaluation
 
 The model was trained for multiple epochs and evaluated using:
+
 - Training loss
 - Story coherence
 - Grammar quality
@@ -127,19 +146,21 @@ The model was trained for multiple epochs and evaluated using:
 - Generalization capability
 
 For evaluation, two prompts were used after every epoch:
+
 1. A prompt similar to the training distribution
 2. A prompt not directly seen during training
 
 This helped evaluate both:
-- memorization behavior
-- generalization ability
+
+- Memorization behavior
+- Generalization ability
 
 ---
 
-# 📈 Training Progress
+# Training Progress
 
 | Epoch | Final Loss | Observation |
-|---|---|---|
+|---|---:|---|
 | Epoch 1 to 4 | 2.6882 | Basic sentence formation learned |
 | Epoch 5 | 2.6246 | Improved coherence and flow |
 | Epoch 6 | 2.5307 | Best overall text quality |
@@ -148,21 +169,24 @@ This helped evaluate both:
 
 ---
 
-# 🧠 Epoch-wise Analysis
+# Epoch-wise Analysis
 
 ## Epoch 1 to 4
 
 ### Improvements
+
 - Learned basic sentence structure
 - Generated understandable stories
 - Began learning character continuity
 
 ### Issues
+
 - Semantic confusion
 - Weak coherence
 - Repetitive structures
 
 ### Example Problems
+
 ```text
 wanted to eat the truck
 ```
@@ -172,32 +196,37 @@ wanted to eat the truck
 ## Epoch 5
 
 ### Improvements
+
 - Better story flow
 - Improved dialogue generation
 - More stable text generation
 
 ### Issues
+
 - Logical inconsistencies
 - Object repetition
 - Occasional broken sentences
 
 ---
 
-## Epoch 6 — Best Checkpoint ✅
+## Epoch 6 — Best Checkpoint
 
 Epoch 6 produced the best balance between:
-- coherence
-- grammar
-- creativity
-- stability
+
+- Coherence
+- Grammar
+- Creativity
+- Stability
 
 ### Improvements
+
 - Better emotional continuity
 - Improved narrative progression
 - More natural dialogue
 - Stronger semantic consistency
 
 ### Example
+
 ```text
 "I'm sorry, Lily. We can fix it together."
 ```
@@ -209,11 +238,13 @@ This checkpoint demonstrated the strongest overall generation quality.
 ## Epoch 7
 
 ### Observations
+
 - Slightly lower loss
 - Text quality started degrading
 - Increased repetitive phrasing
 
 ### Signs of Overfitting
+
 ```text
 dirty and dirty
 ```
@@ -222,28 +253,29 @@ Generation became less creative and more repetitive.
 
 ---
 
-## Epoch 8 — Model Collapse ❌
+## Epoch 8 — Model Collapse
 
 Although training loss decreased further, generation quality collapsed completely.
 
 ### Failure Pattern
+
 ```text
 at at at at at at at...
 ```
 
 ### Cause
-This is a classic transformer degeneration problem caused by:
-- overfitting
-- token probability collapse
-- reduced diversity
 
-This epoch was not suitable for deployment.
+This epoch showed severe text degeneration characterized by:
+
+- Overfitting
+- Token probability collapse
+- Reduced diversity
+
+This epoch was not selected for deployment.
 
 ---
 
-# ⚠️ Important Observation
-
-This project demonstrated an important language model training behavior:
+# Important Observation
 
 > Lower training loss does not always produce better text generation quality.
 
@@ -251,62 +283,258 @@ The best generation quality was achieved before the minimum loss value.
 
 ---
 
-# 🏆 Best Model
+# Best Model
 
 | Best Checkpoint | Epoch 6 |
 |---|---|
-| Best Loss-Quality Balance | ✅ |
-| Most Coherent Stories | ✅ |
-| Best Generalization | ✅ |
-| Lowest Repetition | ✅ |
+| Best Loss-Quality Balance | Yes |
+| Most Coherent Stories | Yes |
+| Best Generalization | Yes |
+| Lowest Repetition | Yes |
 
 The Epoch 6 checkpoint was selected as the final deployment model.
 
 ---
 
-# 📌 Key Learning
+# Application Architecture
 
-This evaluation process helped demonstrate:
-- learning progression in transformers
-- overfitting behavior
-- text degeneration patterns
-- relationship between loss and generation quality
-- importance of qualitative evaluation in language models
+The project contains two application layers:
+
+```text
+User
+ │
+ ▼
+Streamlit Frontend
+ │
+ │ HTTP Streaming Request
+ ▼
+FastAPI Backend
+ │
+ ▼
+MiniGPT Transformer
+ │
+ ├── SentencePiece Tokenizer
+ ├── Epoch 6 Weights
+ └── Autoregressive Generation
+ │
+ ▼
+Token-by-Token Response
+ │
+ ▼
+Streamlit Story Display
+```
+
+The frontend sends a story prompt to the FastAPI backend.
+
+The backend generates the story autoregressively and streams the generated text progressively back to the frontend.
 
 ---
 
+# Story Generation
 
+The application accepts a text prompt with a minimum length of 50 characters.
 
+Example:
 
-Clone repository:
-
-```bash
-git clone https://github.com/Mohdkaif05/decoder-transformer-tensorflow
-
-cd minigpt
+```text
+Once upon a time there was a young boy who loved playing with his toy car.
 ```
 
-Install dependencies:
+The model then generates the continuation token by token.
+
+Generation uses:
+
+- Temperature: `0.9`
+- Top-k: `40`
+- Maximum new tokens: `120`
+- Context length: `128`
+
+---
+
+# Backend
+
+The backend is implemented using FastAPI.
+
+Location:
+
+```text
+backend/app.py
+```
+
+The API provides a story generation endpoint:
+
+```text
+POST /generate
+```
+
+Request:
+
+```json
+{
+    "prompt": "Once upon a time there was a young boy who loved playing with his toy car."
+}
+```
+
+The backend validates that the prompt contains at least 50 characters.
+
+---
+
+# Frontend
+
+The frontend is implemented using Streamlit.
+
+Location:
+
+```text
+frontend/streamlit_app.py
+```
+
+The frontend provides:
+
+- Story prompt input
+- Dynamic character counter
+- 50-character minimum validation
+- Generate Story button
+- Real-time story generation
+- Token-by-token story display
+
+---
+
+# Installation
+
+Clone the repository:
 
 ```bash
-pip install -r requirements.txt
+git clone https://github.com/Mohdkaif05/decoder-transformer-tensorflow.git
+
+cd decoder-transformer-tensorflow
+```
+
+Install backend dependencies:
+
+```bash
+pip install -r backend/requirements.txt
+```
+
+Install frontend dependencies:
+
+```bash
+pip install -r frontend/requirements.txt
 ```
 
 ---
 
-# 📦 Requirements
+# Run Backend
+
+From the project root:
+
+```bash
+uvicorn backend.app:app --reload
+```
+
+The API will run at:
+
+```text
+http://127.0.0.1:8000
+```
+
+---
+
+# Run Frontend
+
+Open another terminal:
+
+```bash
+streamlit run frontend/streamlit_app.py
+```
+
+The Streamlit application will open in the browser.
+
+---
+
+# Requirements
+
+## Backend
 
 ```text
 tensorflow==2.20.0
-datasets==4.8.5
-os
-pickle
 numpy==2.2.6
+sentencepiece
+fastapi
+uvicorn
+```
+
+## Frontend
+
+```text
+streamlit
+requests
 ```
 
 ---
 
-# 🧠 What I Learned
+# Deployment
+
+The application is designed to be deployed using a free-tier cloud setup.
+
+Recommended architecture:
+
+```text
+GitHub Repository
+       │
+       ├── FastAPI Backend
+       │      │
+       │      └── MiniGPT Model
+       │
+       └── Streamlit Frontend
+              │
+              └── Calls FastAPI API
+```
+
+The backend hosts:
+
+- Transformer model
+- Tokenizer
+- Story generation API
+
+The frontend hosts:
+
+- Streamlit interface
+- Prompt input
+- Character counter
+- Generated story display
+
+The Epoch 6 model checkpoint is used for production inference.
+
+---
+
+# Current Limitations
+
+- Small model size
+- Limited training data
+- Short context length
+- Occasional repetition in generation
+- Training constrained by limited GPU resources (RTX 3050 4GB VRAM)
+- Smaller batch sizes due to hardware limitations
+- Limited ability to train larger transformer architectures
+- Generation quality is limited compared with large pretrained language models
+
+---
+
+# Future Improvements
+
+- Train on a larger dataset for better language understanding
+- Increase context window for longer story generation
+- Experiment with larger transformer architectures
+- Add quantization for lightweight deployment
+- Add user-configurable generation parameters
+- Create Hugging Face model repository
+- Improve repetition control
+- Improve generation quality with better sampling strategies
+
+---
+
+# What I Learned
 
 Through this project I gained practical understanding of:
 
@@ -318,42 +546,17 @@ Through this project I gained practical understanding of:
 - TensorFlow custom model building
 - Efficient data pipelines
 - FastAPI model deployment
+- REST API development
 - LLM inference workflow
+- Real-time token streaming
+- Frontend-backend integration
 
 ---
 
-# 🚀 Future Improvements
-
-- Train on a larger dataset for better language understanding
-- Increase context window for longer story generation
-- Experiment with larger transformer architectures
-- Add quantization for lightweight deployment
-- Build REST API using FastAPI
-- Deploy backend model server on Render or Railway
-- Build frontend application for interactive story generation
-- Deploy frontend using Vercel
-- Add real-time text streaming generation
-- Create Hugging Face model repository
-- Add user-configurable generation parameters
-- Build complete end-to-end AI storytelling application
-
----
-
-# 📊 Current Limitations
-
-- Small model size
-- Limited training data
-- Short context length
-- Occasional repetition in generation
-- Training constrained by limited GPU resources (RTX 3050 4GB VRAM)
-- Smaller batch sizes due to hardware limitations
-- Limited ability to train larger transformer architectures
-
----
-
-# 🤝 Acknowledgements
+# Acknowledgements
 
 Inspired by:
+
 - GPT Architecture
 - Attention Is All You Need
 - TinyStories Dataset
@@ -361,9 +564,8 @@ Inspired by:
 
 ---
 
-# ⭐ Project Goal
+# Project Goal
 
 The primary goal of this project is educational:
-to deeply understand how modern transformer-based language models work internally by implementing them from scratch.
 
----
+> To deeply understand how modern transformer-based language models work internally by implementing them from scratch.
