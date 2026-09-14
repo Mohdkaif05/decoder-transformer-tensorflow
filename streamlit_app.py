@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 
 
-API_URL = "http://backend:8000/generate"
+API_URL = "https://decoder-transformer-tensorflow.onrender.com/generate"
 
 
 st.set_page_config(
