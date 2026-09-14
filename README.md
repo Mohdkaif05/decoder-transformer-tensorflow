@@ -1,4 +1,4 @@
-# MiniGPT — GPT Style Transformer Built From Scratch Using TensorFlow
+# MiniGPT — GPT-Style Transformer Built From Scratch Using TensorFlow
 
 ## Overview
 
@@ -19,6 +19,8 @@ This implementation includes:
 - FastAPI Inference API
 - Streamlit Frontend
 - Real-time Token-by-Token Story Generation
+- Dockerized Backend and Frontend
+- Cloud Deployment using Render
 
 The model was trained on a TinyStories-style dataset to generate short coherent stories.
 
@@ -42,6 +44,8 @@ https://huggingface.co/datasets/roneneldan/TinyStories
 - FastAPI Backend
 - Streamlit Frontend
 - Token-by-Token Streaming Generation
+- Dockerized application
+- Separate backend and frontend deployment
 - Epoch 6 selected as the final deployment checkpoint
 
 ---
@@ -49,7 +53,7 @@ https://huggingface.co/datasets/roneneldan/TinyStories
 # Model Architecture
 
 | Parameter | Value |
-|---|---|
+|---|---:|
 | Architecture | Decoder-Only Transformer |
 | Layers | 4 |
 | Attention Heads | 4 |
@@ -96,13 +100,14 @@ https://huggingface.co/datasets/roneneldan/TinyStories
 ```text
 minigpt/
 │
-├── backend/
-│   ├── app.py
-│   └── requirements.txt
+├── app.py
+├── streamlit_app.py
+├── requirements.txt
 │
-├── frontend/
-│   ├── streamlit_app.py
-│   └── requirements.txt
+├── Dockerfile
+├── Dockerfile.streamlit
+├── docker-compose.yml
+├── .dockerignore
 │
 ├── models/
 │   ├── config.json
@@ -113,39 +118,53 @@ minigpt/
 │   └── tok.vocab
 │
 ├── data/
-│   ├── raw_dataset/
-│   │   └── texts_50k.pkl
-│   │
-│   ├── processed_dataset/
-│   │   ├── final_texts_50k.pkl
-│   │   └── stories.txt
-│   │
-│   └── training_data/
-│       ├── x_50k.pkl
-│       └── y_50k.pkl
+│   ├── raw/
+│   ├── processed/
+│   └── training/
 │
 ├── notebooks/
 │   ├── data_preprocessing.ipynb
-│   └── training.ipynb
+│   └── transformer_experiments.ipynb
 │
 ├── README.md
 └── .gitignore
 ```
 
+### Main Files
+
+| File | Purpose |
+|---|---|
+| `app.py` | FastAPI backend and MiniGPT inference |
+| `streamlit_app.py` | Streamlit frontend |
+| `Dockerfile` | Docker image for the FastAPI backend |
+| `Dockerfile.streamlit` | Docker image for the Streamlit frontend |
+| `docker-compose.yml` | Runs backend and frontend together locally |
+| `models/` | Model configuration and Epoch 6 weights |
+| `tokenizer/` | SentencePiece tokenizer |
+| `requirements.txt` | Python dependencies |
+
 ---
 
 # Model Evaluation
 
-The model was trained for multiple epochs and evaluated using:
+The model was trained for multiple epochs and evaluated using both quantitative and qualitative methods.
+
+## Evaluation Criteria
+
+### Quantitative
 
 - Training loss
+- Perplexity
+
+### Qualitative
+
 - Story coherence
 - Grammar quality
 - Repetition control
 - Creativity
 - Generalization capability
 
-For evaluation, two prompts were used after every epoch:
+For qualitative evaluation, two prompts were used after every epoch:
 
 1. A prompt similar to the training distribution
 2. A prompt not directly seen during training
@@ -157,15 +176,56 @@ This helped evaluate both:
 
 ---
 
-# Training Progress
+# Model Parameter Summary
+
+The model contains approximately:
+
+| Parameter | Value |
+|---|---:|
+| Total Parameters | ~7.34 million |
+| Trainable Parameters | ~7.34 million |
+| Non-trainable Parameters | 0 |
+| Model Size | ~27.7 MB |
+
+---
+
+# Loss Analysis
+
+It was not possible to train the model continuously on the laptop due to overheating issues. Therefore, the model was trained one epoch at a time and the loss was recorded after each epoch.
+
+The training loss decreased significantly during the early epochs and then gradually flattened.
 
 | Epoch | Final Loss | Observation |
 |---|---:|---|
-| Epoch 1 to 4 | 2.6882 | Basic sentence formation learned |
+| Epoch 1–4 | 2.6882 | Basic sentence formation learned |
 | Epoch 5 | 2.6246 | Improved coherence and flow |
 | Epoch 6 | 2.5307 | Best overall text quality |
 | Epoch 7 | 2.5169 | Slight overfitting begins |
 | Epoch 8 | 2.4874 | Severe repetition collapse |
+
+The loss continued to decrease through Epoch 8, but generation quality did not improve accordingly.
+
+---
+
+# Perplexity
+
+Perplexity was calculated from the language-model loss using:
+
+```text
+Perplexity = exp(Loss)
+```
+
+The perplexity decreased substantially during the early stages of training and then stabilized.
+
+The important observation from the evaluation is that **lower perplexity did not necessarily correspond to better generated text**.
+
+Epoch 6 provided the best practical balance between:
+
+- Coherence
+- Grammar
+- Creativity
+- Stability
+- Repetition control
 
 ---
 
@@ -185,7 +245,7 @@ This helped evaluate both:
 - Weak coherence
 - Repetitive structures
 
-### Example Problems
+### Example Problem
 
 ```text
 wanted to eat the truck
@@ -255,7 +315,7 @@ Generation became less creative and more repetitive.
 
 ## Epoch 8 — Model Collapse
 
-Although training loss decreased further, generation quality collapsed completely.
+Although training loss decreased further, generation quality collapsed.
 
 ### Failure Pattern
 
@@ -281,12 +341,15 @@ This epoch was not selected for deployment.
 
 The best generation quality was achieved before the minimum loss value.
 
+Therefore, the final deployed model is **Epoch 6**, rather than the epoch with the lowest training loss.
+
 ---
 
 # Best Model
 
-| Best Checkpoint | Epoch 6 |
+| Evaluation | Result |
 |---|---|
+| Best Checkpoint | Epoch 6 |
 | Best Loss-Quality Balance | Yes |
 | Most Coherent Stories | Yes |
 | Best Generalization | Yes |
@@ -298,35 +361,36 @@ The Epoch 6 checkpoint was selected as the final deployment model.
 
 # Application Architecture
 
-The project contains two application layers:
+The application uses two separately deployed services:
 
 ```text
-User
- │
- ▼
-Streamlit Frontend
- │
- │ HTTP Streaming Request
- ▼
-FastAPI Backend
- │
- ▼
-MiniGPT Transformer
- │
- ├── SentencePiece Tokenizer
- ├── Epoch 6 Weights
- └── Autoregressive Generation
- │
- ▼
-Token-by-Token Response
- │
- ▼
-Streamlit Story Display
+                         User
+                          │
+                          ▼
+                 Streamlit Frontend
+                          │
+                          │ HTTP POST /generate
+                          ▼
+                   FastAPI Backend
+                          │
+                          ▼
+                  MiniGPT Transformer
+                          │
+             ┌────────────┼────────────┐
+             ▼            ▼            ▼
+        SentencePiece  Epoch 6    Autoregressive
+         Tokenizer      Weights      Generation
+                          │
+                          ▼
+                Token-by-Token Response
+                          │
+                          ▼
+                 Streamlit Story Display
 ```
 
-The frontend sends a story prompt to the FastAPI backend.
+The frontend sends the user's prompt to the FastAPI backend.
 
-The backend generates the story autoregressively and streams the generated text progressively back to the frontend.
+The backend loads the SentencePiece tokenizer and Epoch 6 model checkpoint, generates the continuation autoregressively, and streams the generated text progressively back to the frontend.
 
 ---
 
@@ -358,16 +422,16 @@ The backend is implemented using FastAPI.
 Location:
 
 ```text
-backend/app.py
+app.py
 ```
 
-The API provides a story generation endpoint:
+The API provides:
 
 ```text
 POST /generate
 ```
 
-Request:
+Example request:
 
 ```json
 {
@@ -376,6 +440,16 @@ Request:
 ```
 
 The backend validates that the prompt contains at least 50 characters.
+
+The backend is responsible for:
+
+- Loading the MiniGPT model
+- Loading the SentencePiece tokenizer
+- Receiving prompts
+- Autoregressive token generation
+- Top-k sampling
+- Temperature sampling
+- Streaming generated text to the frontend
 
 ---
 
@@ -386,7 +460,7 @@ The frontend is implemented using Streamlit.
 Location:
 
 ```text
-frontend/streamlit_app.py
+streamlit_app.py
 ```
 
 The frontend provides:
@@ -398,6 +472,147 @@ The frontend provides:
 - Real-time story generation
 - Token-by-token story display
 
+The frontend sends requests to the deployed FastAPI backend.
+
+---
+
+# Dockerization
+
+Both application layers are Dockerized separately.
+
+## Backend Dockerization
+
+The backend uses:
+
+```text
+Dockerfile
+```
+
+The backend Docker image contains:
+
+- Python 3.10
+- TensorFlow 2.20.0
+- NumPy
+- SentencePiece
+- FastAPI
+- Uvicorn
+- MiniGPT model files
+- Tokenizer files
+
+The backend container runs FastAPI on:
+
+```text
+Port: 8000
+```
+
+Example backend Docker command:
+
+```dockerfile
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+## Frontend Dockerization
+
+The frontend uses:
+
+```text
+Dockerfile.streamlit
+```
+
+The frontend Docker image contains:
+
+- Python 3.10
+- Streamlit
+- Requests
+- Streamlit application
+
+For Render deployment, Streamlit listens on:
+
+```text
+Port: 10000
+```
+
+The Dockerfile uses:
+
+```dockerfile
+CMD ["sh", "-c", "streamlit run streamlit_app.py --server.address=0.0.0.0 --server.port=10000"]
+```
+
+## Docker Compose
+
+The two containers can be run together locally using:
+
+```bash
+docker compose build
+docker compose up
+```
+
+Local architecture:
+
+```text
+                    Docker Compose
+                         │
+            ┌────────────┴────────────┐
+            │                         │
+            ▼                         ▼
+    Streamlit Container       FastAPI Container
+         :8501                     :8000
+            │                         │
+            │      HTTP Request       │
+            └────────────────────────►
+                                      │
+                                      ▼
+                               MiniGPT Epoch 6
+```
+
+This allows the frontend and backend to be tested locally in an environment similar to the cloud deployment.
+
+---
+
+# Docker Commands
+
+## Build the Services
+
+```bash
+docker compose build
+```
+
+For a clean rebuild:
+
+```bash
+docker compose build --no-cache
+```
+
+## Start the Services
+
+```bash
+docker compose up
+```
+
+## Stop the Services
+
+```bash
+docker compose down
+```
+
+The Streamlit frontend can be accessed locally at:
+
+```text
+http://localhost:8501
+```
+
+The FastAPI backend can be accessed locally at:
+
+```text
+http://localhost:8000
+```
+
+FastAPI documentation:
+
+```text
+http://localhost:8000/docs
+```
+
 ---
 
 # Installation
@@ -406,30 +621,23 @@ Clone the repository:
 
 ```bash
 git clone https://github.com/Mohdkaif05/decoder-transformer-tensorflow.git
-
 cd decoder-transformer-tensorflow
 ```
 
-Install backend dependencies:
+Install dependencies:
 
 ```bash
-pip install -r backend/requirements.txt
-```
-
-Install frontend dependencies:
-
-```bash
-pip install -r frontend/requirements.txt
+pip install -r requirements.txt
 ```
 
 ---
 
-# Run Backend
+# Run Backend Locally
 
 From the project root:
 
 ```bash
-uvicorn backend.app:app --reload
+uvicorn app:app --reload
 ```
 
 The API will run at:
@@ -438,14 +646,20 @@ The API will run at:
 http://127.0.0.1:8000
 ```
 
+API documentation:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
 ---
 
-# Run Frontend
+# Run Frontend Locally
 
 Open another terminal:
 
 ```bash
-streamlit run frontend/streamlit_app.py
+streamlit run streamlit_app.py
 ```
 
 The Streamlit application will open in the browser.
@@ -454,55 +668,184 @@ The Streamlit application will open in the browser.
 
 # Requirements
 
-## Backend
-
 ```text
 tensorflow==2.20.0
 numpy==2.2.6
 sentencepiece
 fastapi
-uvicorn
-```
-
-## Frontend
-
-```text
+uvicorn[standard]
+pydantic
 streamlit
 requests
 ```
 
 ---
 
-# Deployment
+# Deployment on Render
 
-The application is designed to be deployed using a free-tier cloud setup.
-
-Recommended architecture:
+The project is deployed on Render as **two separate Dockerized Web Services**.
 
 ```text
-GitHub Repository
-       │
-       ├── FastAPI Backend
-       │      │
-       │      └── MiniGPT Model
-       │
-       └── Streamlit Frontend
-              │
-              └── Calls FastAPI API
+                         GitHub Repository
+                                │
+                 ┌──────────────┴──────────────┐
+                 │                             │
+                 ▼                             ▼
+       Render Frontend Service        Render Backend Service
+       Dockerfile.streamlit              Dockerfile
+                 │                             │
+                 ▼                             ▼
+             Streamlit                    FastAPI
+                 │                             │
+                 │ POST /generate              │
+                 └────────────────────────────►
+                                               │
+                                               ▼
+                                        MiniGPT Epoch 6
 ```
 
-The backend hosts:
+## Live Services
 
-- Transformer model
-- Tokenizer
-- Story generation API
+### Frontend
 
-The frontend hosts:
+**Streamlit Application**
 
-- Streamlit interface
-- Prompt input
-- Character counter
-- Generated story display
+https://minigpt-frontend.onrender.com
+
+### Backend
+
+**FastAPI API**
+
+https://decoder-transformer-tensorflow.onrender.com
+
+### Backend API Documentation
+
+https://decoder-transformer-tensorflow.onrender.com/docs
+
+---
+
+# Render Frontend Deployment
+
+The frontend is deployed as a separate Render Web Service.
+
+### Configuration
+
+```text
+Service Type: Web Service
+Runtime: Docker
+Dockerfile: ./Dockerfile.streamlit
+Port: 10000
+```
+
+The frontend Dockerfile starts Streamlit with:
+
+```dockerfile
+CMD ["sh", "-c", "streamlit run streamlit_app.py --server.address=0.0.0.0 --server.port=10000"]
+```
+
+The Streamlit frontend is publicly available at:
+
+```text
+https://minigpt-frontend.onrender.com
+```
+
+---
+
+# Render Backend Deployment
+
+The backend is deployed as a separate Render Web Service.
+
+### Configuration
+
+```text
+Service Type: Web Service
+Runtime: Docker
+Dockerfile: ./Dockerfile
+Port: 8000
+```
+
+The backend provides the story-generation API:
+
+```text
+POST /generate
+```
+
+The deployed backend is available at:
+
+```text
+https://decoder-transformer-tensorflow.onrender.com
+```
+
+API documentation:
+
+```text
+https://decoder-transformer-tensorflow.onrender.com/docs
+```
+
+---
+
+# Frontend–Backend Communication in Production
+
+The production frontend communicates directly with the deployed FastAPI backend.
+
+The frontend API configuration uses:
+
+```python
+API_URL = "https://decoder-transformer-tensorflow.onrender.com/generate"
+```
+
+Request flow:
+
+```text
+User enters prompt
+        │
+        ▼
+Streamlit Frontend
+        │
+        │ POST /generate
+        ▼
+FastAPI Backend
+        │
+        ▼
+SentencePiece Tokenizer
+        │
+        ▼
+MiniGPT Epoch 6
+        │
+        ▼
+Autoregressive Generation
+        │
+        ▼
+Streaming Response
+        │
+        ▼
+Streamlit Frontend
+        │
+        ▼
+Generated Story
+```
+
+---
+
+# Render Deployment Flow
+
+```text
+1. Code is pushed to GitHub
+        ↓
+2. Render pulls the repository
+        ↓
+3. Render builds the Docker image
+        ↓
+4. Docker container starts
+        ↓
+5. Backend / frontend service becomes available
+        ↓
+6. Streamlit sends requests to FastAPI
+        ↓
+7. FastAPI runs MiniGPT inference
+        ↓
+8. Generated story is streamed back
+```
 
 The Epoch 6 model checkpoint is used for production inference.
 
@@ -518,6 +861,7 @@ The Epoch 6 model checkpoint is used for production inference.
 - Smaller batch sizes due to hardware limitations
 - Limited ability to train larger transformer architectures
 - Generation quality is limited compared with large pretrained language models
+- Cloud inference can be slower than local inference because of limited cloud resources
 
 ---
 
@@ -531,6 +875,8 @@ The Epoch 6 model checkpoint is used for production inference.
 - Create Hugging Face model repository
 - Improve repetition control
 - Improve generation quality with better sampling strategies
+- Add stronger evaluation metrics
+- Improve production inference performance
 
 ---
 
@@ -550,6 +896,9 @@ Through this project I gained practical understanding of:
 - LLM inference workflow
 - Real-time token streaming
 - Frontend-backend integration
+- Docker containerization
+- Multi-container application architecture
+- Cloud deployment using Render
 
 ---
 
